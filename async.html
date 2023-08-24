@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <form onsubmit="saveToLocalStorage(event)">
+      <label>ProductName</label>
+      <input type="text" name="name" />
+
+      <label>Price</label>
+      <input type="number" name="price" />
+
+      <label> Quantity</label>
+      <input type="number" name="quantity" />
+
+      <button> Add Item </button>
+    </form>
+    <ul id="listOfitems"></ul>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+      }
+
+      form {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 8px;
+      }
+
+      input[type="text"],
+      input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin-bottom: 10px;
+      }
+
+      button {
+        background-color: #007bff;
+        color: #ffffff;
+       /* // border: none; */
+        padding: 10px 20px;
+        border-radius: 3px;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+
+      li {
+        background-color: #ffffff;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+      }
+
+      input[type="button"] {
+        background-color: #dc3545;
+        color: #ffffff;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+    </style>
+    <script>
+        async function saveToLocalStorage(event) {
+          event.preventDefault();
+          const name = event.target.name.value;
+          const price = event.target.price.value;
+          const quantity = event.target.quantity.value;
+
+          const obj = {
+            name: name,
+            price: price,
+            quantity: quantity,
+          };
+
+          try {
+            const response = await axios.post(
+              "https://crudcrud.com/api/c138513fa93d46dc8234f110d55f5291/appointmentdata",
+              obj
+            );
+            showUserOnScreen(response.data);
+            // Clear the input fields
+            event.target.name.value = "";
+            event.target.price.value = "";
+            event.target.quantity.value = "";
+
+            // Save the entire object to localStorage using its _id as the key
+            localStorage.setItem(response.data._id, JSON.stringify(obj));
+          } catch (err) {
+            document.body.innerHTML += "<h4>Something went wrong</h4>";
+          }
+        }
+
+      async function fetchUserData() {
+        try {
+          const response = await axios.get(
+            "https://crudcrud.com/api/c138513fa93d46dc8234f110d55f5291/appointmentdata"
+          );
+          for (const user of response.data) {
+            showUserOnScreen(user);
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      }
+      async function removeUser(userId) {
+        try {
+          await axios.delete(
+            `https://crudcrud.com/api/c138513fa93d46dc8234f110d55f5291/appointmentdata/${userId}`
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+            async function updateQuantity(obj) {
+        try {
+          const response = await axios.put(
+            `https://crudcrud.com/api/c138513fa93d46dc8234f110d55f5291/appointmentdata/${obj._id}`,
+            { name: obj.name,
+              price: obj.price,
+              quantity: obj.quantity - 1 } // Decrease the quantity by 1
+          );
+
+          // Update the obj's quantity
+            obj.name=obj.name;
+            obj.price=obj.price;
+            obj.quantity = obj.quantity - 1;
+            
+      
+          // Find the list item by ID and update its content
+          const listItem = document.getElementById(obj._id);
+            if (listItem) {
+              listItem.textContent = `${obj.name} - ${obj.price} - ${obj.quantity}`;
+            }
+            // Store the updated quantity, name, and email in localStorage
+            localStorage.setItem('quantity', obj.quantity);
+            localStorage.setItem('name', obj.name);
+            localStorage.setItem('price', obj.price);
+
+          } catch (err) {
+            console.log(err);
+          }
+      }
+
+      function showUserOnScreen(obj) {
+        console.log('Showing user on screen:', obj);
+        const parentElem = document.getElementById("listOfitems");
+        const childElem = document.createElement("li");
+        childElem.textContent = obj.name + "-" + obj.price + "-" + obj.quantity;
+
+        const deleteButton = document.createElement("input");
+        deleteButton.type = "button";
+        deleteButton.value = "Delete";
+
+        deleteButton.onclick = async () => {
+          await removeUser(obj._id);
+          localStorage.removeItem(obj.price);
+          parentElem.removeChild(childElem);
+        };
+
+        const Buy1 = document.createElement("input");
+        Buy1.type = "button";
+        Buy1.value = "Buy1";
+        Buy1.onclick = async (event) => {
+          event.preventDefault();
+          await updateQuantity(obj);
+        };
+
+        childElem.appendChild(deleteButton);
+        childElem.appendChild(Buy1);
+        parentElem.appendChild(childElem);
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+    fetchUserData();
+  });
+    </script>
+  </body>
+</html>
